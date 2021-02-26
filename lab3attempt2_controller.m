@@ -36,6 +36,9 @@ while wb_robot_step(TIME_STEP) ~= -1
   %run a motor by velocity rad/s
   wb_motor_set_velocity(motor_R,-4);%right motor
   wb_motor_set_velocity(motor_L,-10);%left motor
+  %read motor velocities
+  lv = wb_motor_get_velocity(motor_L);
+  rv = wb_motor_get_velocity(motor_R);
   %read sensor data
   compass_data = wb_compass_get_values(compass);
   gyro_data = wb_gyro_get_values(gyro);
@@ -50,21 +53,22 @@ while wb_robot_step(TIME_STEP) ~= -1
   lidarRarr(k,1) = lidar_R_data;
   lidarFarr(k,1) = lidar_F_data;
   compassarr(k,:) = compass_data; 
-  gyroarr(k,:) = gyro_data; 
+  gyroarr(k,:) = gyro_data;
+  lvarr(k,:) = lv;
+  rvarr(k,:) = rv; 
   positionarr(k,:) = position;
   anglearr(k,:) = angle;
   velocityarr(k,:) = velocity; 
   
   %wb_console_print(sprintf('%8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f \n', size(timearr,1), size(lidarRarr,1), size(lidarFarr,1),size(compassarr,1), size(gyroarr,1), size(positionarr,1), size(anglearr,1), size(velocityarr,1)), WB_STDOUT);
- 
   
   time = time + TIME_STEP;
   k = k + 1;
   
-  if time == 10000 % in ms, can change to desired length of sim
+  if time == 10000 + TIME_STEP % in ms, can change to desired length of sim
     filename = 'C:\Users\OWNER1\Documents\lab3controllerresults.xlsx';
-    T = table(timearr, lidarRarr, lidarFarr, compassarr, gyroarr, positionarr, anglearr, velocityarr);
-    writetable(T,filename,'Sheet',2);
+    T = table(timearr, lidarFarr, lidarRarr, gyroarr, compassarr, lvarr, rvarr, positionarr, anglearr, velocityarr);
+    writetable(T,filename,'Sheet',1); %change sheet number according to trajectory
   end  
  
 end
