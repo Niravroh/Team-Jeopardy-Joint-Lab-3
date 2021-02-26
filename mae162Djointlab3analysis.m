@@ -1,11 +1,10 @@
 clear all; close all; clc;
 
 %% Trajectory Analysis for Joint Lab 3
-% What's left to do as of 2/25/21 10.37 PM: Need to figure out where to
-% pull left and right wheel angular velocities. Need to check units of sim data and do
-% conversions. Once data is gathered, make sure format matches & change
-% field and duration to suit sim (segway v paperbot). Other than that,i think the comparison & plots
-% should be good.
+% What's left to do as of 2/26/21 9.45 AM: Make sure code/data format matches & change
+% field and duration to suit sim (segway v paperbot). 
+%Other than that,i think the comparison & plots should be good. All units
+%in mm, deg, or unitless
 
 %Set up parameters
 sampleFrequency = 0.01;
@@ -16,45 +15,45 @@ field = 10000; % in mm
 set(groot, 'defaultTextInterpreter','latex');
 
 %Get data from excel files
-truetable = readtable('analytical.xls'); %replace filename with correct file path
-simtable = readtable('webots.xls');
-true = table2array(truetable);
-sim = table2array(simtable);
+anatable = readtable('analytical.xls'); %replace filename with correct file path
+webtable = readtable('webots.xls');
+ana = table2array(anatable);
+web = table2array(webtable);
 
 %Specify data sets
-true_t = true(:,1);
-true_lv = true(:,2);
-true_rv = true(:,3);
-true_x = true(:,4)*10;
-true_y = true(:,5)*10;
-true_theta = true(:,6);
+ana_t = ana(:,1);
+ana_lv = ana(:,2);
+ana_rv = ana(:,3);
+ana_x = ana(:,4)*10;
+ana_y = ana(:,5)*10;
+ana_theta = ana(:,6);
 
-r_true_x = resample(true_x, true_t, 1/sampleFrequency, 1, 1);
-r_true_y = resample(true_y, true_t, 1/sampleFrequency, 1, 1);
-r_true_theta = resample(true_theta, true_t, 1/sampleFrequency, 1, 1);
-r_true_t = (sampleFrequency*(0:size(r_true_x,1)-1))';
-r_true_x = r_true_x(1:size(r_true_x,1)-1);
-r_true_y = r_true_y(1:size(r_true_y,1)-1);
-r_true_t = r_true_t(1:size(r_true_t,1)-1);
-r_true_theta = r_true_theta(1:size(r_true_theta,1)-1);
-r_true_theta = wrapTo2Pi(r_true_theta)-3*pi/2;
+r_ana_x = resample(ana_x, ana_t, 1/sampleFrequency, 1, 1);
+r_ana_y = resample(ana_y, ana_t, 1/sampleFrequency, 1, 1);
+r_ana_theta = resample(ana_theta, ana_t, 1/sampleFrequency, 1, 1);
+r_ana_t = (sampleFrequency*(0:size(r_ana_x,1)-1))';
+r_ana_x = r_ana_x(1:size(r_ana_x,1)-1);
+r_ana_y = r_ana_y(1:size(r_ana_y,1)-1);
+r_ana_t = r_ana_t(1:size(r_ana_t,1)-1);
+r_ana_theta = r_ana_theta(1:size(r_ana_theta,1)-1);
+r_ana_theta = wrapTo2Pi(r_ana_theta)-3*pi/2;
 
-sim_t = sim(:,1);
-sim_lv = sim(:,   )  %not sure how to get lv rv from sim data
-sim_rv = sim(:,   )
-sim_x = sim(:,10);  %component 1 of position, global x
-sim_y = sim(:,12);  %component 3 of position, global y
-sim_theta = sim(:,16);
-sim_lidarF = sim(:,2);
-sim_lidarR = sim(:,3);
-sim_gyro = sim(:,5);    %component 2 of gyro, global z
-sim_compassx = sim(:,7); %component 1 of compass, global x
-sim_compassy = sim(:,9);    %component 3 of compass, global y
+web_t = web(:,1)*0.001; %ms to s
+web_lv = web(:,10)*180/2/pi;    %rad/s to deg/s
+web_rv = web(:,11)*180/2/pi;
+web_x = web(:,12)*1000;  %component 1 of position (global x); m to mm
+web_y = web(:,14)*1000;  %component 3 of position (global y); m to mm
+web_theta = web(:,18); %rad
+web_lidarF = web(:,2)*10/4096*1000;  %to mm
+web_lidarR = web(:,3)*10/4096*1000; %to mm
+web_gyro = web(:,5)*180/2/pi;    %component 2 of gyro (global z); rad/s to deg/s
+web_compassx = web(:,7); %component 1 of compass (global x); unitless
+web_compassy = web(:,9);    %component 3 of compass (global y); 
 
 %Plot results
 figure(1)
 subplot(1,3,1)
-plot(r_true_t,r_true_x,'LineWidth', lineWidth);
+plot(r_ana_t,r_ana_x,'LineWidth', lineWidth);
 xlim([0,duration]);
 ylim([0,field]);
 title("Analytical Simulation");
@@ -64,7 +63,7 @@ grid on;
 set(gca,'Fontsize',fontSize);
 
 subplot(1,3,2);
-plot(sim_T,sim_X,'LineWidth', lineWidth);
+plot(web_t,web_x,'LineWidth', lineWidth);
 xlim([0,duration]);
 ylim([0,field]);
 title("Webots Simulation");
@@ -73,10 +72,9 @@ grid on;
 set(gca,'Fontsize',fontSize);
 
 subplot(1,3,3);
-percent_error_X = abs(r_true_x - sim_X([1:size(r_true_x,1)]))./r_true_x;
-plot(r_true_t,percent_error_X,'LineWidth', lineWidth);
+percent_error_X = abs(r_ana_x - sim_X([1:size(r_ana_x,1)]))./r_ana_x;
+plot(r_ana_t,percent_error_X,'LineWidth', lineWidth);
 xlim([0,duration]);
-%ylim([0,20]);
 title("Percent Error");
 xlabel("Time (s)");
 ylabel("Percent Error (\%)");
@@ -87,7 +85,7 @@ set(gcf,'position',[0,0,1200,400])
 
 figure(2);
 subplot(1,3,1);
-plot(r_true_t,r_true_y,'LineWidth', lineWidth);
+plot(r_ana_t,r_ana_y,'LineWidth', lineWidth);
 xlim([0,duration]);
 ylim([0,field]);
 title("Analytical Simulation");
@@ -98,7 +96,7 @@ set(gca,'Fontsize',fontSize);
 set(gcf,'position',[0,0,1200,400])
 
 subplot(1,3,2);
-plot(sim_T,sim_Y,'LineWidth', lineWidth);
+plot(web_t,web_y,'LineWidth', lineWidth);
 xlim([0,duration]);
 ylim([0,field]);
 title("Webots Simulation");
@@ -107,10 +105,9 @@ grid on;
 set(gca,'Fontsize',fontSize);
 
 subplot(1,3,3);
-percent_error_Y = abs(r_true_y - sim_Y([1:size(r_true_y,1)]))./r_true_y;
-plot(r_true_t,percent_error_Y,'LineWidth', lineWidth);
+percent_error_Y = abs(r_ana_y - sim_Y([1:size(r_ana_y,1)]))./r_ana_y;
+plot(r_ana_t,percent_error_Y,'LineWidth', lineWidth);
 xlim([0,duration]);
-%ylim([0,20]);
 title("Percent Error");
 xlabel("Time (s)");
 ylabel("Percent Error (\%)");
@@ -120,7 +117,7 @@ set(gca,'Fontsize',fontSize);
 
 figure(3);
 subplot(1,3,1);
-plot(r_true_t,rad2deg(r_true_theta),'LineWidth', lineWidth);
+plot(r_ana_t,rad2deg(r_ana_theta),'LineWidth', lineWidth);
 xlim([0,duration]);
 ylim([-180,180]);
 title("Analytical Simulation");
@@ -132,7 +129,7 @@ set(gca,'Fontsize',fontSize);
 set(gcf,'position',[0,0,1200,400])
 
 subplot(1,3,2);
-plot(sim_T,rad2deg(sim_Theta),'LineWidth', lineWidth);
+plot(web_t,rad2deg(web_theta),'LineWidth', lineWidth);
 xlim([0,duration]);
 ylim([-180,180]);
 title("Webots Simulation");
@@ -142,10 +139,9 @@ grid on;
 set(gca,'Fontsize',fontSize);
 
 subplot(1,3,3);
-percent_error_lv = abs(abs(r_true_theta - sim_Theta([1:size(r_true_theta,1)]))./r_true_theta);
-plot(r_true_t,percent_error_lv,'LineWidth', lineWidth);
+percent_error_lv = abs(abs(r_ana_theta - web_theta([1:size(r_ana_theta,1)]))./r_ana_theta);
+plot(r_ana_t,percent_error_lv,'LineWidth', lineWidth);
 xlim([0,duration]);
-%ylim([0,20]);
 title("Percent Error");
 xlabel("Time (s)");
 ylabel("Percent Error (\%)");
@@ -154,9 +150,9 @@ set(gca,'Fontsize',fontSize);
 
 figure(4)
 subplot(1,3,1);
-plot(true_t, -true_lv,'g','LineWidth', lineWidth);
+plot(ana_t, -ana_lv,'g','LineWidth', lineWidth);
 hold on;
-plot(true_t, -true_rv,'r','LineWidth', lineWidth);
+plot(ana_t, -ana_rv,'r','LineWidth', lineWidth);
 title("Analytical Simulation");
 xlabel("Time (s)");
 ylabel("Angular Velocity (degrees/s)");
@@ -164,9 +160,9 @@ legend('Left Wheel', 'Right Wheel');
 grid on;
 
 subplot(1,3,2);
-plot(sim_t, -sim_lv,'g','LineWidth', lineWidth);
+plot(web_t, -web_lv,'g','LineWidth', lineWidth);
 hold on;
-plot(sim_t, -sim_rv,'r','LineWidth', lineWidth);
+plot(web_t, -web_rv,'r','LineWidth', lineWidth);
 title("Webots Simulation");
 xlabel("Time (s)");
 ylabel("Angular Velocity (degrees/s)");
@@ -175,11 +171,11 @@ grid on;
 set(gcf,'position',[0,0,1000,400])
 
 subplot(1,3,3);
-percent_error_lv = abs(abs(r_true_lv - sim_lv([1:size(r_true_lv,1)]))./r_true_lv);
-percent_error_rv = abs(abs(r_true_rv - sim_rv([1:size(r_true_rv,1)]))./r_true_rv);
-plot(r_true_t,percent_error_lv,'LineWidth', lineWidth);
+percent_error_lv = abs(abs(r_true_lv - web_lv([1:size(r_true_lv,1)]))./r_true_lv);
+percent_error_rv = abs(abs(r_true_rv - web_rv([1:size(r_true_rv,1)]))./r_true_rv);
+plot(r_ana_t,percent_error_lv,'LineWidth', lineWidth);
 hold on;
-plot(r_true_t,percent_error_rv,'LineWidth', lineWidth);
+plot(r_ana_t,percent_error_rv,'LineWidth', lineWidth);
 xlim([0,duration]);
 %ylim([0,20]);
 title("Percent Error");
@@ -191,26 +187,31 @@ set(gca,'Fontsize',fontSize);
 
 figure(5)
 subplot(2,3,1)
-plot(sim_t, sim_lidarF)
+plot(web_t, web_lidarF)
 title('Front Lidar Output')
 xlabel('Time (s)');
+ylabel ('Distance to Wall (mm)')
 
 subplot(2,3,2)
-plot(sim_t, sim_lidarR)
+plot(web_t, web_lidarR)
 title('Right Lidar Output')
 xlabel('Time (s)');
+ylabel ('Distance to Wall (mm)')
 
 subplot(2,3,3)
-plot(sim_t, sim_gyro)
+plot(web_t, web_gyro)
 title('Gyro Output')
 xlabel('Time (s)');
+ylabel ('Angular Velocity (deg/s)')
 
 subplot(2,3,4)
-plot(sim_t, sim_compassx)
+plot(web_t, web_compassx)
 title('Compass X Output')
 xlabel('Time (s)');
+ylabel ('Magnitude')
 
 subplot(2,3,5)
-plot(sim_t, sim_compassy)
+plot(web_t, web_compassy)
 title('Compass Y Output')
 xlabel('Time (s)');
+ylabel ('Magnitude')
